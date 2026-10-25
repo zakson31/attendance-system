@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance and Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#eaf0ee;--card:#fff;--ink:#12302b;--muted:#5d7570;--line:#cddad6;--accent:#0f766e;--onaccent:#fff;--warn:#b45309;--danger:#c62f4a}
+  @media(prefers-color-scheme:dark){:root{--bg:#0d1b19;--card:#142926;--ink:#e4f0ed;--muted:#8fa9a3;--line:#25413c;--accent:#4fd1c0;--onaccent:#0d1b19;--warn:#f0b35a;--danger:#ff7b92}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+  .wrap{max-width:600px;margin:0 auto;padding:22px 16px 70px}
+  h1{font-size:2.1rem;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px}
+  .sub{color:var(--muted);font-size:.9rem;margin:0 0 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px;margin:0 0 10px}
+  input:focus,select:focus,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+  button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--onaccent);padding:10px 15px;margin:2px 6px 2px 0}
+  button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  button.small{padding:5px 10px;font-size:.8rem}
+  button.danger{background:transparent;color:var(--danger);border-color:var(--line)}
+  .row,.two{display:flex;gap:10px;flex-wrap:wrap}.two input{flex:1;min-width:110px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:14px}
+  .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px}
+  .tab{background:transparent;color:var(--ink);border-color:var(--line);white-space:nowrap}
+  .tab.on{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
+  .msg{min-height:1.3em;font-size:.9rem;margin:4px 0 8px;color:var(--danger)}
+  .empty{color:var(--muted);text-align:center;padding:26px 0}
+  .big{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.4rem;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+  .sess{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.5rem;font-weight:700;letter-spacing:.25em;color:var(--warn)}
+  .code.off{color:var(--muted);text-decoration:line-through}
+  .bar{height:8px;border-radius:8px;background:var(--bg);margin:8px 0;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .grade{font-size:1.8rem;font-weight:800;color:var(--accent)}
+  .item{display:flex;flex-direction:column;gap:6px}
+  .swap{font-size:.9rem;color:var(--muted);margin:12px 0 0}
+  .swap a{color:var(--accent);font-weight:600}
+  [hidden]{display:none!important}
+  @media print{.noprint{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="auth" hidden>
+    <h1>Attendance and Results</h1>
+    <p class="sub" id="authSub">Log in to continue.</p>
+
+    <div class="card" id="loginCard">
+      <input id="email" type="email" placeholder="Email" autocomplete="email">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="loginBtn">Log in</button>
+      <p class="swap">New here? <a href="#" id="toSignup">Create an account</a></p>
+      <p id="authMsg" class="msg"></p>
+    </div>
+
+    <div class="card" id="signupCard" hidden>
+      <select id="role"><option value="student">I am a student</option><option value="lecturer">I am a lecturer</option></select>
+      <input id="name" placeholder="Full name" autocomplete="name">
+      <input id="matric" placeholder="Matric number">
+      <input id="semail" type="email" placeholder="Email" autocomplete="email">
+      <input id="spassword" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+      <input id="spassword2" type="password" placeholder="Confirm password" autocomplete="new-password">
+      <button id="signupBtn">Create account</button>
+      <p class="swap">Already have an account? <a href="#" id="toLogin">Log in</a></p>
+      <p id="signMsg" class="msg"></p>
+    </div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="top noprint">
+      <div><h1>Attendance</h1><div class="sub" id="who"></div></div>
+      <button id="logoutBtn" class="ghost">Log out</button>
+    </div>
+    <nav id="tabs" class="tabs noprint"></nav>
+    <p id="msg" class="msg"></p>
+    <div id="view"></div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  // ====== sb_publishable_aVD7-sI3mCffERlZyhmLXQ_Ozuwnlie ======
+  const SUPABASE_URL = "https://mdtoqiafeerdlzfkxyxa.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_aVD7-sI3mCffERlZyhmLXQ_Ozuwnlie";
+  // ================================================================
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const CH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let me = null, tab = "";
+
+  function h(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    for (const k in props || {}) {
+      if (k === "class") e.className = props[k];
+      else if (k.startsWith("on") || k === "value") e[k] = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    kids.flat().forEach((c) => { if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(c)); });
+    return e;
+  }
+  const msg = (t, bad) => { const m = $("msg"); m.textContent = t || ""; m.style.color = bad ? "var(--danger)" : "var(--accent)"; };
+  const empty = (t) => h("div", { class: "empty" }, t);
+  const grade = (t) => t >= 70 ? "A" : t >= 60 ? "B" : t >= 50 ? "C" : t >= 45 ? "D" : t >= 40 ? "E" : "F";
+
+  const TABS = {
+    admin: [["courses", "Courses"], ["users", "Users"]],
+    lecturer: [["mine", "My courses"], ["results", "Results"]],
+    student: [["join", "Courses"], ["attend", "Attendance"], ["grades", "Results"]]
+  };
+  const VIEWS = { courses: vCourses, users: vUsers, mine: vMine, results: vResults, join: vJoin, attend: vAttend, grades: vGrades };
+
+  /* ---------- AUTH ---------- */
+  function mode(signup) {
+    $("loginCard").hidden = signup; $("signupCard").hidden = !signup;
+    $("authSub").textContent = signup ? "Create your account." : "Log in to continue.";
+    $("authMsg").textContent = ""; $("signMsg").textContent = "";
+  }
+  $("toSignup").onclick = (e) => { e.preventDefault(); mode(true); };
+  $("toLogin").onclick = (e) => { e.preventDefault(); mode(false); };
+  $("role").onchange = () => { $("matric").hidden = $("role").value !== "student"; };
+
+  $("signupBtn").onclick = async () => {
+    const m = $("signMsg"); m.style.color = "var(--danger)"; m.textContent = "";
+    const role = $("role").value, name = $("name").value.trim(), matric = $("matric").value.trim();
+    if (!name) { m.textContent = "Enter your full name."; return; }
+    if (role === "student" && !matric) { m.textContent = "Enter your matric number."; return; }
+    if ($("spassword").value.length < 6) { m.textContent = "Password must be at least 6 characters."; return; }
+    if ($("spassword").value !== $("spassword2").value) { m.textContent = "Passwords do not match."; return; }
+    const { data, error } = await db.auth.signUp({
+      email: $("semail").value.trim(), password: $("spassword").value,
+      options: { data: { full_name: name, role, matric_no: role === "student" ? matric : "" } }
+    });
+    if (error) { m.textContent = error.message; return; }
+    if (!data.session) { m.style.color = "var(--accent)"; m.textContent = "Account created. Check your email to confirm it, then log in."; }
+  };
+  $("loginBtn").onclick = async () => {
+    $("authMsg").textContent = "";
+    const { error } = await db.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+    if (error) $("authMsg").textContent = error.message;
+  };
+  $("logoutBtn").onclick = () => db.auth.signOut();
+
+  async function start(s) {
+    if (!s) { me = null; mode(false); $("auth").hidden = false; $("app").hidden = true; return; }
+    if (me && me.id === s.user.id) return;
+    const { data, error } = await db.from("profiles").select("*").eq("id", s.user.id).single();
+    if (error || !data) { $("auth").hidden = false; $("authMsg").textContent = "Profile not found. Check that the database setup ran."; return; }
+    me = data;
+    $("auth").hidden = true; $("app").hidden = false;
+    $("who").textContent = (me.full_name || "No name") + " (" + me.role + ")";
+    tab = TABS[me.role][0][0];
+    drawTabs(); show();
+  }
+  db.auth.onAuthStateChange((_e, s) => setTimeout(() => start(s), 0));
+
+  function drawTabs() {
+    $("tabs").replaceChildren(...TABS[me.role].map(([k, l]) =>
+      h("button", { class: k === tab ? "tab on" : "tab", onclick: () => { tab = k; drawTabs(); show(); } }, l)));
+  }
+  function show() { msg(""); VIEWS[tab](); }
+
+  /* ---------- ADMIN ---------- */
+  async function vCourses() {
+    const v = $("view");
+    const [{ data: lect }, { data: cs }] = await Promise.all([
+      db.from("profiles").select("id,full_name").eq("role", "lecturer"),
+      db.from("courses").select("*").order("code")
+    ]);
+    const lopts = () => [h("option", { value: "" }, "No lecturer"), ...(lect || []).map((l) => h("option", { value: l.id }, l.full_name || "Unnamed"))];
+    const code = h("input", { placeholder: "Course code, e.g. CSC401" });
+    const title = h("input", { placeholder: "Course title" });
+    const sel = h("select", {}, lopts());
+    const add = h("button", { onclick: async () => {
+      if (!code.value.trim() || !title.value.trim()) return msg("Enter a course code and title.", 1);
+      const { error } = await db.from("courses").insert({ code: code.value.trim().toUpperCase(), title: title.value.trim(), lecturer_id: sel.value || null });
+      if (error) return msg(error.message, 1);
+      msg("Course added."); vCourses();
+    } }, "Add course");
+    v.replaceChildren(h("div", { class: "card" }, code, title, sel, add), ...(cs || []).map((c) => {
+      const ls = h("select", { onchange: async () => {
+        const { error } = await db.from("courses").update({ lecturer_id: ls.value || null }).eq("id", c.id);
+        msg(error ? error.message : "Lecturer updated.", !!error);
+      } }, lopts());
+      ls.value = c.lecturer_id || "";
+      const del = h("button", { class: "danger small", onclick: async () => {
+        if (!confirm("Delete " + c.code + " and all its records?")) return;
+        const { error } = await db.from("courses").delete().eq("id", c.id);
+        if (error) return msg(error.message, 1);
+        vCourses();
+      } }, "Delete course");
+      return h("div", { class: "card item" }, h("b", {}, c.code), h("div", {}, c.title), ls, h("div", {}, del));
+    }));
+    if (!(cs || []).length) v.append(empty("No courses yet. Add the first one above."));
+  }
+
+  async function vUsers() {
+    const { data } = await db.from("profiles").select("*").order("created_at", { ascending: false });
+    $("view").replaceChildren(...(data || []).map((p) => {
+      const s = h("select", { onchange: async () => {
+        const { error } = await db.from("profiles").update({ role: s.value }).eq("id", p.id);
+        msg(error ? error.message : "Role updated.", !!error);
+      } }, ["student", "lecturer", "admin"].map((r) => h("option", { value: r }, r)));
+      s.value = p.role;
+      return h("div", { class: "card" }, h("b", {}, p.full_name || "No name"), h("div", { class: "sub" }, p.matric_no || "No matric number"), s);
+    }));
+  }
+
+  /* ---------- LECTURER ---------- */
+  async function vMine() {
+    const v = $("view");
+    const { data: cs } = await db.from("courses").select("*").eq("lecturer_id", me.id).order("code");
+    if (!cs || !cs.length) { v.replaceChildren(empty("No courses assigned to you yet. Ask the admin to assign one.")); return; }
+    const { data: ss } = await db.from("attendance_sessions").select("*").in("course_id", cs.map((c) => c.id)).order("created_at", { ascending: false });
+    const ids = (ss || []).map((s) => s.id), counts = {};
+    if (ids.length) {
+      const { data: at } = await db.from("attendance").select("session_id").in("session_id", ids);
+      (at || []).forEach((a) => counts[a.session_id] = (counts[a.session_id] || 0) + 1);
+    }
+    v.replaceChildren(...cs.map((c) => {
+      const list = (ss || []).filter((s) => s.course_id === c.id).slice(0, 5).map((s) =>
+        h("div", { class: "sess" },
+          h("span", { class: s.is_open ? "code" : "code off" }, s.code),
+          h("span", { class: "sub" }, (counts[s.id] || 0) + " present, " + new Date(s.created_at).toLocaleString()),
+          s.is_open && h("button", { class: "ghost small", onclick: async () => {
+            await db.from("attendance_sessions").update({ is_open: false }).eq("id", s.id); vMine();
+          } }, "Close")));
+      const startBtn = h("button", { onclick: async () => {
+        const code = Array.from(crypto.getRandomValues(new Uint8Array(5)), (n) => CH[n % CH.length]).join("");
+        const { error } = await db.from("attendance_sessions").insert({ course_id: c.id, code });
+        if (error) return msg(error.message, 1);
+        vMine();
+      } }, "Start attendance");
+      return h("div", { class: "card" }, h("b", {}, c.code), h("div", {}, c.title), startBtn, ...list);
+    }));
+  }
+
+  async function vResults() {
+    const v = $("view");
+    const { data: cs } = await db.from("courses").select("id,code,title").eq("lecturer_id", me.id).order("code");
+    if (!cs || !cs.length) { v.replaceChildren(empty("No courses assigned to you yet.")); return; }
+    const sel = h("select", { onchange: () => load() }, cs.map((c) => h("option", { value: c.id }, c.code + " - " + c.title)));
+    const box = h("div");
+    v.replaceChildren(h("div", { class: "card" }, sel), box);
+    async function load() {
+      const [{ data: en }, { data: rs }] = await Promise.all([
+        db.from("enrollments").select("student_id,profiles(full_name,matric_no)").eq("course_id", sel.value),
+        db.from("results").select("*").eq("course_id", sel.value)
+      ]);
+      if (!en || !en.length) { box.replaceChildren(empty("No students enrolled in this course yet.")); return; }
+      const rm = Object.fromEntries((rs || []).map((r) => [r.student_id, r]));
+      const rows = en.map((e) => {
+        const r = rm[e.student_id] || {};
+        const ca = h("input", { type: "number", min: 0, max: 30, placeholder: "CA (30)", value: r.ca_score ?? "" });
+        const ex = h("input", { type: "number", min: 0, max: 70, placeholder: "Exam (70)", value: r.exam_score ?? "" });
+        const p = e.profiles || {};
+        return { id: e.student_id, ca, ex, node: h("div", { class: "card" }, h("b", {}, p.full_name || "Student"), h("div", { class: "sub" }, p.matric_no || ""), h("div", { class: "two" }, ca, ex)) };
+      });
+      const save = h("button", { onclick: async () => {
+        const payload = rows.map((r) => ({ course_id: sel.value, student_id: r.id, ca_score: Number(r.ca.value) || 0, exam_score: Number(r.ex.value) || 0 }));
+        const { error } = await db.from("results").upsert(payload, { onConflict: "course_id,student_id" });
+        msg(error ? error.message : "Results saved.", !!error);
+      } }, "Save results");
+      box.replaceChildren(...rows.map((r) => r.node), save);
+    }
+    load();
+  }
+
+  /* ---------- STUDENT ---------- */
+  async function vJoin() {
+    const [{ data: cs }, { data: en }] = await Promise.all([
+      db.from("courses").select("*").order("code"),
+      db.from("enrollments").select("course_id").eq("student_id", me.id)
+    ]);
+    const mine = new Set((en || []).map((e) => e.course_id));
+    if (!(cs || []).length) { $("view").replaceChildren(empty("No courses available yet.")); return; }
+    $("view").replaceChildren(...cs.map((c) => {
+      const on = mine.has(c.id);
+      const b = h("button", { class: on ? "ghost small" : "", onclick: async () => {
+        const { error } = on
+          ? await db.from("enrollments").delete().eq("course_id", c.id).eq("student_id", me.id)
+          : await db.from("enrollments").insert({ course_id: c.id, student_id: me.id });
+        if (error) return msg(error.message, 1);
+        msg(on ? "Dropped " + c.code + "." : "Enrolled in " + c.code + "."); vJoin();
+      } }, on ? "Drop course" : "Enroll");
+      return h("div", { class: "card item" }, h("b", {}, c.code), h("div", {}, c.title), on && h("div", { class: "sub" }, "You are enrolled."), h("div", {}, b));
+    }));
+  }
+
+  async function vAttend() {
+    const code = h("input", { class: "big", placeholder: "CODE", maxlength: 5 });
+    const btn = h("button", { onclick: async () => {
+      const { data, error } = await db.rpc("mark_attendance", { p_code: code.value.trim() });
+      msg(error ? error.message : data, !!error || data !== "Attendance marked");
+      vAttend();
+    } }, "Mark attendance");
+    const { data } = await db.rpc("my_attendance");
+    $("view").replaceChildren(
+      h("div", { class: "card" }, h("p", { class: "sub" }, "Enter the code your lecturer shows in class."), code, btn),
+      ...(data || []).map((r) => {
+        const pct = r.total_sessions ? Math.round(100 * r.attended / r.total_sessions) : 0;
+        return h("div", { class: "card" }, h("b", {}, r.course_code), h("div", {}, r.title),
+          h("div", { class: "bar" }, h("i", { style: "width:" + pct + "%" })),
+          h("div", { class: "sub" }, r.attended + " of " + r.total_sessions + " sessions (" + pct + "%)"));
+      }),
+      !(data || []).length && empty("Enroll in a course to see your attendance."));
+  }
+
+  async function vGrades() {
+    const { data } = await db.from("results").select("ca_score,exam_score,courses(code,title)").eq("student_id", me.id);
+    if (!(data || []).length) { $("view").replaceChildren(empty("No results have been published for you yet.")); return; }
+    $("view").replaceChildren(
+      h("div", { class: "noprint" }, h("button", { class: "ghost", onclick: () => window.print() }, "Print results")),
+      ...data.map((r) => {
+        const t = Number(r.ca_score) + Number(r.exam_score), c = r.courses || {};
+        return h("div", { class: "card" }, h("b", {}, c.code || "Course"), h("div", {}, c.title || ""),
+          h("div", { class: "sub" }, "CA " + r.ca_score + ", Exam " + r.exam_score + ", Total " + t),
+          h("div", { class: "grade" }, grade(t)));
+      }));
+  }
+</script>
+</body>
+</html>
