@@ -1,1 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance and Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#edf3ee;--card:#fff;--ink:#11301b;--muted:#5b7060;--line:#d0ddd2;--accent:#1b7a3a;--onaccent:#fff;--warn:#b45309;--danger:#c62f4a;--brand:#14532d}
+  @media(prefers-color-scheme:dark){:root{--bg:#0c1a10;--card:#132a1a;--ink:#e6f2e8;--muted:#8fae96;--line:#24402c;--accent:#6fd68a;--onaccent:#0c1a10;--warn:#f0b35a;--danger:#ff7b92;--brand:#0f3d21}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+  .wrap{max-width:600px;margin:0 auto;padding:22px 16px 70px}
+  h1{font-size:2.1rem;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px}
+  .sub{color:var(--muted);font-size:.9rem;margin:0 0 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px;margin:0 0 10px}
+  input:focus,select:focus,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+  button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--onaccent);padding:10px 15px;margin:2px 6px 2px 0}
+  button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  button.small{padding:5px 10px;font-size:.8rem}
+  button.danger{background:transparent;color:var(--danger);border-color:var(--line)}
+  .row,.two{display:flex;gap:10px;flex-wrap:wrap}.two input{flex:1;min-width:110px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:14px}
+  .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px}
+  .tab{background:transparent;color:var(--ink);border-color:var(--line);white-space:nowrap}
+  .tab.on{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
+  .msg{min-height:1.3em;font-size:.9rem;margin:4px 0 8px;color:var(--danger)}
+  .empty{color:var(--muted);text-align:center;padding:26px 0}
+  .big{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.4rem;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+  .sess{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.5rem;font-weight:700;letter-spacing:.25em;color:var(--warn)}
+  .code.off{color:var(--muted);text-decoration:line-through}
+  .bar{height:8px;border-radius:8px;background:var(--bg);margin:8px 0;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .grade{font-size:1.8rem;font-weight:800;color:var(--accent)}
+  .item{display:flex;flex-direction:column;gap:6px}
+  .pw{position:relative}
+  .pw input{padding-right:48px}
+  button.eye{position:absolute;right:4px;top:4px;width:38px;height:38px;margin:0;padding:0;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:var(--muted)}
+  .hero{background:var(--brand);color:#fff;border-radius:22px;padding:30px 20px 74px;text-align:center}
+  .hero img{display:block;width:108px;height:108px;margin:0 auto 14px;border-radius:50%;background:#fff;border:4px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .hero h1{font-size:1.35rem;line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+  .hero p{margin:0;color:#c9e6d1;font-size:.95rem}
+  .authcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin:-48px 10px 0;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.10)}
+  .seg{display:flex;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:16px}
+  .seg button{flex:1;margin:0;background:transparent;color:var(--muted);border:0;border-radius:9px;padding:10px 6px}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .authcard input,.authcard select{padding:13px;margin-bottom:12px}
+  .authcard button.primary{width:100%;margin:6px 0 0;padding:13px;font-size:1rem}
+  .pw{margin-bottom:12px}
+  .authcard .pw input{margin:0;display:block;padding-right:50px}
+  .pw button.eye{top:50%;transform:translateY(-50%);right:6px;height:40px}
+  .note{text-align:center;color:var(--muted);font-size:.8rem;margin:18px 0 0}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img{width:46px;height:46px;border-radius:50%;background:#fff;flex:none}
+  .top h1{font-size:1.5rem}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat b{display:block;font-size:1.7rem;font-weight:800;color:var(--accent)}
+  .stat span{font-size:.8rem;color:var(--muted)}
+  .scroll{overflow-x:auto;margin-top:10px}
+  .tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+  .tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .tbl th{color:var(--muted);font-weight:600}
+  .pill{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:99px;color:var(--danger);border:1px solid var(--line);margin-left:8px}
+  button.linkbtn{background:none;border:0;padding:6px 2px;margin:0;color:var(--accent);font-weight:600;text-decoration:underline}
+  [hidden]{display:none!important}
+  @media print{.noprint{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="auth" hidden>
+    <div class="hero">
+      <img id="bigLogo" alt="Ibrahim Badamasi Babangida University logo" src="data:image/png;base64,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">
+      <h1>Ibrahim Badamasi Babangida University, Lapai</h1>
+      <p>Attendance and Results Portal</p>
+    </div>
+
+    <div class="authcard">
+      <div class="seg">
+        <button type="button" id="tabLogin" class="on">Log in</button>
+        <button type="button" id="tabSignup">Create account</button>
+      </div>
+
+      <div id="loginCard">
+        <input id="email" type="email" placeholder="Email address" autocomplete="email">
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+        <div style="text-align:right;margin:-4px 0 6px"><button type="button" class="linkbtn" id="forgot">Forgot password?</button></div>
+        <button id="loginBtn" class="primary">Log in</button>
+        <p id="authMsg" class="msg"></p>
+      </div>
+
+      <div id="signupCard" hidden>
+        <select id="role"><option value="student">I am a student</option><option value="lecturer">I am a lecturer</option></select>
+        <input id="name" placeholder="Full name" autocomplete="name">
+        <input id="matric" placeholder="Matric number">
+        <input id="semail" type="email" placeholder="Email address" autocomplete="email">
+        <input id="spassword" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+        <input id="spassword2" type="password" placeholder="Confirm password" autocomplete="new-password">
+        <button id="signupBtn" class="primary">Create account</button>
+        <p id="signMsg" class="msg"></p>
+      </div>
+    </div>
+    <p class="note">Learning for Service</p>
+  </section>
+
+  <section id="reset" hidden>
+    <div class="hero"><h1>Set a new password</h1><p>Choose a password you will remember.</p></div>
+    <div class="authcard">
+      <input id="np1" type="password" placeholder="New password (6+ characters)" autocomplete="new-password">
+      <input id="np2" type="password" placeholder="Confirm new password" autocomplete="new-password">
+      <button id="resetBtn" class="primary">Save new password</button>
+      <p id="resetMsg" class="msg"></p>
+    </div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="top noprint">
+      <div class="brand"><img id="miniLogo" alt="" width="46" height="46"><div><h1>Attendance</h1><div class="sub" id="who"></div></div></div>
+      <button id="logoutBtn" class="ghost">Log out</button>
+    </div>
+    <nav id="tabs" class="tabs noprint"></nav>
+    <p id="msg" class="msg"></p>
+    <div id="view"></div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  // ====== sb_publishable_aVD7-sI3mCffERlZyhmLXQ_Ozuwnlie======
+  const SUPABASE_URL = "https://mdtoqiafeerdlzfkxyxa.supabase.co";
+  const "sb_publishable_aVD7-sI3mCffERlZyhmLXQ_Ozuwnlie";
+  // ================================================================
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const CH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let me = null, tab = "", justSignedUp = false, notice = "", noticeBad = false;
+  let recovering = /type=recovery/.test(location.hash);
+  const DEVICE = deviceId();
+  function deviceId() {
+    try {
+      let d = localStorage.getItem("att_device");
+      if (!d) { d = crypto.randomUUID ? crypto.randomUUID() : "d" + Date.now() + Math.random().toString(16).slice(2); localStorage.setItem("att_device", d); }
+      return d;
+    } catch (e) { return "tmp" + Date.now() + Math.random().toString(16).slice(2); }
+  }
+  function getPos() {
+    return new Promise((res, rej) => {
+      if (!navigator.geolocation) return rej(new Error("This browser cannot share location."));
+      navigator.geolocation.getCurrentPosition(
+        (p) => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+        () => rej(new Error("Allow location access in your browser, then try again.")),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    });
+  }
+
+  function h(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    for (const k in props || {}) {
+      if (k === "class") e.className = props[k];
+      else if (k.startsWith("on") || k === "value") e[k] = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    kids.flat().forEach((c) => { if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(c)); });
+    return e;
+  }
+  const msg = (t, bad) => { const m = $("msg"); m.textContent = t || ""; m.style.color = bad ? "var(--danger)" : "var(--accent)"; };
+  const empty = (t) => h("div", { class: "empty" }, t);
+  const grade = (t) => t >= 70 ? "A" : t >= 60 ? "B" : t >= 50 ? "C" : t >= 45 ? "D" : t >= 40 ? "E" : "F";
+
+  const TABS = {
+    admin: [["overview", "Overview"], ["courses", "Courses"], ["users", "Users"]],
+    lecturer: [["mine", "My courses"], ["results", "Results"], ["reports", "Reports"]],
+    student: [["join", "Courses"], ["attend", "Attendance"], ["grades", "Results"]]
+  };
+  const VIEWS = { overview: vOverview, reports: vReports, courses: vCourses, users: vUsers, mine: vMine, results: vResults, join: vJoin, attend: vAttend, grades: vGrades };
+
+  /* ---------- SHOW / HIDE PASSWORD ---------- */
+  const ICON_SHOW = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const ICON_HIDE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  document.querySelectorAll('input[type=password]').forEach((inp) => {
+    const wrap = h("div", { class: "pw" });
+    const eye = h("button", { type: "button", class: "eye", "aria-label": "Show password" });
+    eye.innerHTML = ICON_SHOW;
+    eye.onclick = () => {
+      const hidden = inp.type === "password";
+      inp.type = hidden ? "text" : "password";
+      eye.innerHTML = hidden ? ICON_HIDE : ICON_SHOW;
+      eye.setAttribute("aria-label", hidden ? "Hide password" : "Show password");
+    };
+    inp.replaceWith(wrap);
+    wrap.append(inp, eye);
+  });
+
+  /* ---------- AUTH ---------- */
+  function mode(signup) {
+    $("loginCard").hidden = signup; $("signupCard").hidden = !signup;
+    $("tabLogin").classList.toggle("on", !signup); $("tabSignup").classList.toggle("on", signup);
+    $("authMsg").textContent = ""; $("signMsg").textContent = "";
+  }
+  function showNotice() { const m = $("authMsg"); m.style.color = noticeBad ? "var(--danger)" : "var(--accent)"; m.textContent = notice; }
+  $("tabSignup").onclick = () => { notice = ""; mode(true); };
+  $("tabLogin").onclick = () => mode(false);
+  $("miniLogo").src = $("bigLogo").src;
+  $("role").onchange = () => { $("matric").hidden = $("role").value !== "student"; };
+
+  $("signupBtn").onclick = async () => {
+    const m = $("signMsg"); m.style.color = "var(--danger)"; m.textContent = "";
+    const role = $("role").value, name = $("name").value.trim(), matric = $("matric").value.trim();
+    if (!name) { m.textContent = "Enter your full name."; return; }
+    if (role === "student" && !matric) { m.textContent = "Enter your matric number."; return; }
+    if ($("spassword").value.length < 6) { m.textContent = "Password must be at least 6 characters."; return; }
+    if ($("spassword").value !== $("spassword2").value) { m.textContent = "Passwords do not match."; return; }
+    justSignedUp = true;
+    const { data, error } = await db.auth.signUp({
+      email: $("semail").value.trim(), password: $("spassword").value,
+      options: { data: { full_name: name, role, matric_no: role === "student" ? matric : "" } }
+    });
+    if (error) { justSignedUp = false; m.textContent = error.message; return; }
+    notice = data.session ? "Account created. Log in with your email and password." : "Account created. Check your email to confirm it, then log in.";
+    noticeBad = false;
+    if (data.session) await db.auth.signOut();
+    justSignedUp = false;
+    $("email").value = $("semail").value.trim();
+    ["name", "matric", "semail", "spassword", "spassword2"].forEach((i) => $(i).value = "");
+    mode(false); showNotice();
+  };
+  $("loginBtn").onclick = async () => {
+    notice = ""; $("authMsg").style.color = "var(--danger)";
+    $("authMsg").textContent = "";
+    const { error } = await db.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+    if (error) $("authMsg").textContent = error.message;
+  };
+  $("logoutBtn").onclick = () => db.auth.signOut();
+
+  $("forgot").onclick = async () => {
+    const m = $("authMsg"), email = $("email").value.trim();
+    if (!email) { m.style.color = "var(--danger)"; m.textContent = "Type your email above first, then tap Forgot password."; return; }
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+    m.style.color = error ? "var(--danger)" : "var(--accent)";
+    m.textContent = error ? error.message : "If that email has an account, a reset link has been sent. Check your inbox.";
+  };
+  function showReset() { $("auth").hidden = true; $("app").hidden = true; $("reset").hidden = false; }
+  $("resetBtn").onclick = async () => {
+    const m = $("resetMsg"); m.style.color = "var(--danger)"; m.textContent = "";
+    if ($("np1").value.length < 6) { m.textContent = "Password must be at least 6 characters."; return; }
+    if ($("np1").value !== $("np2").value) { m.textContent = "Passwords do not match."; return; }
+    const { error } = await db.auth.updateUser({ password: $("np1").value });
+    if (error) { m.textContent = error.message; return; }
+    recovering = false; history.replaceState(null, "", location.pathname);
+    notice = "Password updated. Log in with your new password."; noticeBad = false;
+    $("np1").value = ""; $("np2").value = "";
+    await db.auth.signOut();
+  };
+
+  async function start(s) {
+    if (recovering) { showReset(); return; }
+    if (!s) { me = null; mode(false); if (notice) showNotice(); $("reset").hidden = true; $("auth").hidden = false; $("app").hidden = true; return; }
+    if (justSignedUp) return;
+    if (me && me.id === s.user.id) return;
+    const { data, error } = await db.from("profiles").select("*").eq("id", s.user.id).single();
+    if (error || !data) { $("auth").hidden = false; $("authMsg").textContent = "Profile not found. Check that the database setup ran."; return; }
+    if (data.active === false) { notice = "Your account has been deactivated. Contact the admin."; noticeBad = true; await db.auth.signOut(); return; }
+    me = data;
+    $("auth").hidden = true; $("app").hidden = false;
+    $("who").textContent = (me.full_name || "No name") + " (" + me.role + ")";
+    tab = TABS[me.role][0][0];
+    drawTabs(); show();
+  }
+  db.auth.onAuthStateChange((ev, s) => { if (ev === "PASSWORD_RECOVERY") recovering = true; setTimeout(() => start(s), 0); });
+
+  function drawTabs() {
+    $("tabs").replaceChildren(...TABS[me.role].map(([k, l]) =>
+      h("button", { class: k === tab ? "tab on" : "tab", onclick: () => { tab = k; drawTabs(); show(); } }, l)));
+  }
+  function show() { msg(""); VIEWS[tab](); }
+
+  /* ---------- REPORTS ---------- */
+  function csvDownload(name, rows) {
+    const esc = (v) => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+    const blob = new Blob(["\ufeff" + rows.map((r) => r.map(esc).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = h("a", { href: URL.createObjectURL(blob), download: name });
+    document.body.append(a); a.click(); a.remove();
+  }
+  function tbl(head, rows) {
+    return h("div", { class: "scroll" }, h("table", { class: "tbl" },
+      h("thead", {}, h("tr", {}, head.map((t) => h("th", {}, t)))),
+      h("tbody", {}, rows.map((r) => h("tr", {}, r.map((c) => h("td", {}, c)))))));
+  }
+  function reportUI(cs) {
+    const sel = h("select", {}, cs.map((c) => h("option", { value: c.id }, c.code + " - " + c.title)));
+    const out = h("div");
+    async function run(kind) {
+      const c = cs.find((x) => x.id === sel.value);
+      out.replaceChildren(h("p", { class: "sub" }, "Loading..."));
+      const att = kind === "att";
+      const { data, error } = await db.rpc(att ? "course_attendance_report" : "course_results_report", { p_course: c.id });
+      if (error) return out.replaceChildren(h("p", { class: "msg" }, error.message));
+      const head = att ? ["Matric", "Name", "Attended", "Sessions", "Percent"] : ["Matric", "Name", "CA", "Exam", "Total", "Grade"];
+      const rows = (data || []).map((r) => att
+        ? [r.matric_no || "", r.full_name || "", r.attended, r.total_sessions, (r.total_sessions ? Math.round(100 * r.attended / r.total_sessions) : 0) + "%"]
+        : [r.matric_no || "", r.full_name || "", Number(r.ca_score), Number(r.exam_score), Number(r.ca_score) + Number(r.exam_score), grade(Number(r.ca_score) + Number(r.exam_score))]);
+      out.replaceChildren(rows.length
+        ? h("div", {}, h("button", { class: "ghost small", onclick: () => csvDownload(c.code + (att ? "-attendance.csv" : "-results.csv"), [head, ...rows]) }, "Download CSV"), tbl(head, rows))
+        : empty("No students enrolled in this course yet."));
+    }
+    return h("div", {}, h("div", { class: "card" }, sel, h("button", { onclick: () => run("att") }, "Attendance report"), h("button", { class: "ghost", onclick: () => run("res") }, "Results report")), out);
+  }
+  async function vOverview() {
+    const [{ data: ov }, { data: cs }] = await Promise.all([db.rpc("admin_overview"), db.from("courses").select("id,code,title").order("code")]);
+    const o = (ov && ov[0]) || {};
+    const stat = (n, l) => h("div", { class: "stat" }, h("b", {}, n ?? 0), h("span", {}, l));
+    $("view").replaceChildren(
+      h("div", { class: "stats" }, stat(o.n_students, "Students"), stat(o.n_lecturers, "Lecturers"), stat(o.n_courses, "Courses"), stat(o.n_sessions, "Attendance sessions"), stat(o.n_marks, "Attendance marks")),
+      cs && cs.length ? reportUI(cs) : empty("Add a course to see reports."));
+  }
+  async function vReports() {
+    const { data: cs } = await db.from("courses").select("id,code,title").eq("lecturer_id", me.id).order("code");
+    $("view").replaceChildren(cs && cs.length ? reportUI(cs) : empty("No courses assigned to you yet."));
+  }
+
+  /* ---------- ADMIN ---------- */
+  async function vCourses() {
+    const v = $("view");
+    const [{ data: lect }, { data: cs }] = await Promise.all([
+      db.from("profiles").select("id,full_name").eq("role", "lecturer"),
+      db.from("courses").select("*").order("code")
+    ]);
+    const lopts = () => [h("option", { value: "" }, "No lecturer"), ...(lect || []).map((l) => h("option", { value: l.id }, l.full_name || "Unnamed"))];
+    const code = h("input", { placeholder: "Course code, e.g. CSC401" });
+    const title = h("input", { placeholder: "Course title" });
+    const sel = h("select", {}, lopts());
+    const add = h("button", { onclick: async () => {
+      if (!code.value.trim() || !title.value.trim()) return msg("Enter a course code and title.", 1);
+      const { error } = await db.from("courses").insert({ code: code.value.trim().toUpperCase(), title: title.value.trim(), lecturer_id: sel.value || null });
+      if (error) return msg(error.message, 1);
+      msg("Course added."); vCourses();
+    } }, "Add course");
+    v.replaceChildren(h("div", { class: "card" }, code, title, sel, add), ...(cs || []).map((c) => {
+      const ls = h("select", { onchange: async () => {
+        const { error } = await db.from("courses").update({ lecturer_id: ls.value || null }).eq("id", c.id);
+        msg(error ? error.message : "Lecturer updated.", !!error);
+      } }, lopts());
+      ls.value = c.lecturer_id || "";
+      const del = h("button", { class: "danger small", onclick: async () => {
+        if (!confirm("Delete " + c.code + " and all its records?")) return;
+        const { error } = await db.from("courses").delete().eq("id", c.id);
+        if (error) return msg(error.message, 1);
+        vCourses();
+      } }, "Delete course");
+      return h("div", { class: "card item" }, h("b", {}, c.code), h("div", {}, c.title), ls, h("div", {}, del));
+    }));
+    if (!(cs || []).length) v.append(empty("No courses yet. Add the first one above."));
+  }
+
+  async function vUsers() {
+    const { data } = await db.from("profiles").select("*").order("created_at", { ascending: false });
+    $("view").replaceChildren(...(data || []).map((p) => {
+      const s = h("select", { onchange: async () => {
+        const { error } = await db.from("profiles").update({ role: s.value }).eq("id", p.id);
+        msg(error ? error.message : "Role updated.", !!error);
+      } }, ["student", "lecturer", "admin"].map((r) => h("option", { value: r }, r)));
+      s.value = p.role;
+      const tog = p.id === me.id ? null : h("button", { class: p.active === false ? "small" : "danger small", onclick: async () => {
+        const { error } = await db.from("profiles").update({ active: p.active === false }).eq("id", p.id);
+        if (error) return msg(error.message, 1);
+        msg(p.active === false ? "Account activated." : "Account deactivated."); vUsers();
+      } }, p.active === false ? "Activate" : "Deactivate");
+      return h("div", { class: "card" }, h("b", {}, p.full_name || "No name"), p.active === false && h("span", { class: "pill" }, "Deactivated"), h("div", { class: "sub" }, p.matric_no || "No matric number"), s, tog);
+    }));
+  }
+
+  /* ---------- LECTURER ---------- */
+  async function vMine() {
+    const v = $("view");
+    const { data: cs } = await db.from("courses").select("*").eq("lecturer_id", me.id).order("code");
+    if (!cs || !cs.length) { v.replaceChildren(empty("No courses assigned to you yet. Ask the admin to assign one.")); return; }
+    const { data: ss } = await db.from("attendance_sessions").select("*").in("course_id", cs.map((c) => c.id)).order("created_at", { ascending: false });
+    const ids = (ss || []).map((s) => s.id), counts = {};
+    if (ids.length) {
+      const { data: at } = await db.from("attendance").select("session_id").in("session_id", ids);
+      (at || []).forEach((a) => counts[a.session_id] = (counts[a.session_id] || 0) + 1);
+    }
+    v.replaceChildren(...cs.map((c) => {
+      const list = (ss || []).filter((s) => s.course_id === c.id).slice(0, 5).map((s) =>
+        h("div", { class: "sess" },
+          h("span", { class: s.is_open ? "code" : "code off" }, s.code),
+          h("span", { class: "sub" }, (counts[s.id] || 0) + " present, " + new Date(s.created_at).toLocaleString()),
+          s.is_open && h("button", { class: "ghost small", onclick: async () => {
+            await db.from("attendance_sessions").update({ is_open: false }).eq("id", s.id); vMine();
+          } }, "Close")));
+      const startBtn = h("button", { onclick: async () => {
+        let pos; msg("Getting your location...");
+        try { pos = await getPos(); } catch (e) { return msg(e.message, 1); }
+        const code = Array.from(crypto.getRandomValues(new Uint8Array(5)), (n) => CH[n % CH.length]).join("");
+        const { error } = await db.from("attendance_sessions").insert({ course_id: c.id, code, lat: pos.lat, lng: pos.lng, radius_m: 100 });
+        if (error) return msg(error.message, 1);
+        msg("Attendance started. Students must be within 100 metres of you.");
+        vMine();
+      } }, "Start attendance");
+      return h("div", { class: "card" }, h("b", {}, c.code), h("div", {}, c.title), startBtn, ...list);
+    }));
+  }
+
+  async function vResults() {
+    const v = $("view");
+    const { data: cs } = await db.from("courses").select("id,code,title").eq("lecturer_id", me.id).order("code");
+    if (!cs || !cs.length) { v.replaceChildren(empty("No courses assigned to you yet.")); return; }
+    const sel = h("select", { onchange: () => load() }, cs.map((c) => h("option", { value: c.id }, c.code + " - " + c.title)));
+    const box = h("div");
+    v.replaceChildren(h("div", { class: "card" }, sel), box);
+    async function load() {
+      const [{ data: en }, { data: rs }] = await Promise.all([
+        db.from("enrollments").select("student_id,profiles(full_name,matric_no)").eq("course_id", sel.value),
+        db.from("results").select("*").eq("course_id", sel.value)
+      ]);
+      if (!en || !en.length) { box.replaceChildren(empty("No students enrolled in this course yet.")); return; }
+      const rm = Object.fromEntries((rs || []).map((r) => [r.student_id, r]));
+      const rows = en.map((e) => {
+        const r = rm[e.student_id] || {};
+        const ca = h("input", { type: "number", min: 0, max: 30, placeholder: "CA (30)", value: r.ca_score ?? "" });
+        const ex = h("input", { type: "number", min: 0, max: 70, placeholder: "Exam (70)", value: r.exam_score ?? "" });
+        const p = e.profiles || {};
+        return { id: e.student_id, ca, ex, node: h("div", { class: "card" }, h("b", {}, p.full_name || "Student"), h("div", { class: "sub" }, p.matric_no || ""), h("div", { class: "two" }, ca, ex)) };
+      });
+      const save = h("button", { onclick: async () => {
+        const bad = rows.find((r) => Number(r.ca.value) < 0 || Number(r.ca.value) > 30 || Number(r.ex.value) < 0 || Number(r.ex.value) > 70);
+        if (bad) return msg("CA must be 0 to 30 and exam must be 0 to 70.", 1);
+        const payload = rows.map((r) => ({ course_id: sel.value, student_id: r.id, ca_score: Number(r.ca.value) || 0, exam_score: Number(r.ex.value) || 0 }));
+        const { error } = await db.from("results").upsert(payload, { onConflict: "course_id,student_id" });
+        msg(error ? error.message : "Results saved.", !!error);
+      } }, "Save results");
+      box.replaceChildren(...rows.map((r) => r.node), save);
+    }
+    load();
+  }
+
+  /* ---------- STUDENT ---------- */
+  async function vJoin() {
+    const [{ data: cs }, { data: en }] = await Promise.all([
+      db.from("courses").select("*").order("code"),
+      db.from("enrollments").select("course_id").eq("student_id", me.id)
+    ]);
+    const mine = new Set((en || []).map((e) => e.course_id));
+    if (!(cs || []).length) { $("view").replaceChildren(empty("No courses available yet.")); return; }
+    $("view").replaceChildren(...cs.map((c) => {
+      const on = mine.has(c.id);
+      const b = h("button", { class: on ? "ghost small" : "", onclick: async () => {
+        const { error } = on
+          ? await db.from("enrollments").delete().eq("course_id", c.id).eq("student_id", me.id)
+          : await db.from("enrollments").insert({ course_id: c.id, student_id: me.id });
+        if (error) return msg(error.message, 1);
+        msg(on ? "Dropped " + c.code + "." : "Enrolled in " + c.code + "."); vJoin();
+      } }, on ? "Drop course" : "Enroll");
+      return h("div", { class: "card item" }, h("b", {}, c.code), h("div", {}, c.title), on && h("div", { class: "sub" }, "You are enrolled."), h("div", {}, b));
+    }));
+  }
+
+  async function vAttend() {
+    const code = h("input", { class: "big", placeholder: "CODE", maxlength: 5 });
+    const btn = h("button", { onclick: async () => {
+      msg("Checking your location...");
+      let pos;
+      try { pos = await getPos(); } catch (e) { return msg(e.message, 1); }
+      const { data, error } = await db.rpc("mark_attendance", { p_code: code.value.trim(), p_lat: pos.lat, p_lng: pos.lng, p_acc: pos.acc, p_device: DEVICE });
+      msg(error ? error.message : data, !!error || data !== "Attendance marked");
+      vAttend();
+    } }, "Mark attendance");
+    const { data } = await db.rpc("my_attendance");
+    $("view").replaceChildren(
+      h("div", { class: "card" }, h("p", { class: "sub" }, "Enter the code your lecturer shows in class."), code, btn),
+      ...(data || []).map((r) => {
+        const pct = r.total_sessions ? Math.round(100 * r.attended / r.total_sessions) : 0;
+        return h("div", { class: "card" }, h("b", {}, r.course_code), h("div", {}, r.title),
+          h("div", { class: "bar" }, h("i", { style: "width:" + pct + "%" })),
+          h("div", { class: "sub" }, r.attended + " of " + r.total_sessions + " sessions (" + pct + "%)"));
+      }),
+      !(data || []).length && empty("Enroll in a course to see your attendance."));
+  }
+
+  async function vGrades() {
+    const { data } = await db.from("results").select("ca_score,exam_score,courses(code,title)").eq("student_id", me.id);
+    if (!(data || []).length) { $("view").replaceChildren(empty("No results have been published for you yet.")); return; }
+    $("view").replaceChildren(
+      h("div", { class: "noprint" }, h("button", { class: "ghost", onclick: () => window.print() }, "Print results")),
+      ...data.map((r) => {
+        const t = Number(r.ca_score) + Number(r.exam_score), c = r.courses || {};
+        return h("div", { class: "card" }, h("b", {}, c.code || "Course"), h("div", {}, c.title || ""),
+          h("div", { class: "sub" }, "CA " + r.ca_score + ", Exam " + r.exam_score + ", Total " + t),
+          h("div", { class: "grade" }, grade(t)));
+      }));
+  }
+</script>
+</body>
+</html>
 
